@@ -28,6 +28,7 @@ packages = \
 	gopkg.in/redis.v3 \
 	gopkg.in/unrolled/render.v1
 
+GIT_HASH = $(shell git show-ref --hash=8 HEAD)
 
 install:
 	go get $(packages)
@@ -39,7 +40,9 @@ docker-run:
 	docker run -p 3000:80 -it --rm --name counter stigkj/counter
 
 docker-push:
-	docker push stigkj/counter
+	docker tag stigkj/counter stigkj/counter:$(GIT_HASH)
+	docker push stigkj/counter:$(GIT_HASH)
+	docker push stigkj/counter:latest
 
 clean :
 	-rm -r dist
