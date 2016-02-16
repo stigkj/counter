@@ -58,11 +58,10 @@ func renderHandler(counter Counter) func(w http.ResponseWriter, r *http.Request)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 		render.HTML(w, http.StatusOK, "counter",
-			map[string]string{
+			map[string]string {
 				"count": strconv.Itoa(n),
-				"type":  counter.Name(),
-				"Type":  strings.Title(counter.Name()),
 			})
 	}
 }

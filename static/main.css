@@ -5,25 +5,6 @@ body {
   background-repeat: no-repeat;
 }
 
-body.memory {
-  background-image: url(./images/memory.png);
-}
-body.mongo {
-  background-image: url(./images/mongo.png);
-}
-body.postgres {
-  background-image: url(./images/postgres.png);
-}
-body.redis {
-  background-image: url(./images/redis.png);
-}
-
-.logo {
-  float: left;
-  width: 200px;
-  height: 200px;
-}
-
 h1 {
   margin-top: 100px;
   padding-top: 50px;
