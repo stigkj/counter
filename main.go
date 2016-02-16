@@ -5,55 +5,43 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"gopkg.in/unrolled/render.v1"
 )
 
-type Counter interface {
-	Name() string
-	Inc() error
-	Count() (int, error)
-}
-
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-	log.Printf("Server listening on port: %s", port)
-	counter, err := setup()
+	counter, err := NewPostgresCounter(os.Getenv("POSTGRES_URL"))
+
 	if err != nil {
 		log.Printf("Error initializing counter: %#v", err)
 		os.Exit(1)
 	}
+
 	router := mux.NewRouter().StrictSlash(false)
 	router.HandleFunc("/", renderHandler(counter))
 	router.HandleFunc("/index.html", renderHandler(counter))
 	router.HandleFunc("/counter", counterHandler(counter))
 	router.PathPrefix("/").Handler(http.FileServer(http.Dir("./static")))
 	loggedRouter := handlers.LoggingHandler(os.Stdout, router)
+
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		port = "8080"
+	}
+
+	log.Printf("Server listening on port: %s", port)
+
 	http.ListenAndServe(":"+port, loggedRouter)
 }
 
-func setup() (Counter, error) {
-	if os.Getenv("REDIS_URL") != "" {
-		return NewRedisCounter(os.Getenv("REDIS_URL"))
-	} else if os.Getenv("MONGO_URL") != "" {
-		return NewMongoCounter(os.Getenv("MONGO_URL"))
-	} else if os.Getenv("POSTGRES_URL") != "" {
-		return NewPostgresCounter(os.Getenv("POSTGRES_URL"))
-	} else {
-		return NewMemoryCounter()
-	}
-}
-
-func renderHandler(counter Counter) func(w http.ResponseWriter, r *http.Request) {
+func renderHandler(counter *PostgresCounter) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		render := render.New(render.Options{Layout: "layout"})
 		n, err := counter.Count()
+
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -66,34 +54,28 @@ func renderHandler(counter Counter) func(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-func counterHandler(counter Counter) func(w http.ResponseWriter, r *http.Request) {
+func counterHandler(counter *PostgresCounter) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "GET" {
-			count, err := counter.Count()
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			w.Write([]byte(strconv.Itoa(count)))
-		} else if r.Method == "POST" {
-			err := counter.Inc()
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			count, err := counter.Count()
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-			w.Write([]byte(strconv.Itoa(count)))
+		var err error
+
+		if r.FormValue("type") == "inc" {
+			err = counter.Inc()
+		} else if r.FormValue("type") == "decr" {
+			err = counter.Decr()
 		}
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		count, err := counter.Count()
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Write([]byte(strconv.Itoa(count)))
 	}
-
-}
-
-
-
-
-
 }

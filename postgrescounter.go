@@ -52,25 +52,36 @@ func NewPostgresCounter(url string) (*PostgresCounter, error) {
 	return &PostgresCounter{db, url}, nil
 }
 
-func (self *PostgresCounter) Name() string {
-	return "postgres"
-}
-
 func (self *PostgresCounter) Inc() error {
 	_, err := self.db.Exec("update Counter set n = n+1")
+
 	if err != nil {
 		log.Printf("%#v", err)
 		return err
 	}
+
+	return nil
+}
+
+func (self *PostgresCounter) Decr() error {
+	_, err := self.db.Exec("update Counter set n = n-1")
+
+	if err != nil {
+		log.Printf("%#v", err)
+		return err
+	}
+
 	return nil
 }
 
 func (self *PostgresCounter) Count() (int, error) {
 	var n int
 	err := self.db.QueryRow("select n from Counter").Scan(&n)
+
 	if err != nil {
 		log.Printf("%#v", err)
 		return 0, err
 	}
+
 	return n, nil
 }
