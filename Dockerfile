@@ -1,5 +1,5 @@
 FROM scratch
-MAINTAINER Anders Janmyr "anders@janmyr.com"
+MAINTAINER Stig Kleppe-Jørgensen "from.github@nisgits.net"
 
 COPY dist/counter-linux /
 COPY static /static
