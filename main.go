@@ -92,23 +92,8 @@ func counterHandler(counter Counter) func(w http.ResponseWriter, r *http.Request
 
 }
 
-type MemoryCounter struct {
-	counter int
-}
 
-func NewMemoryCounter() (*MemoryCounter, error) {
-	return &MemoryCounter{}, nil
-}
 
-func (self *MemoryCounter) Name() string {
-	return "memory"
-}
 
-func (self *MemoryCounter) Inc() error {
-	self.counter++
-	return nil
-}
 
-func (self *MemoryCounter) Count() (int, error) {
-	return self.counter, nil
 }
