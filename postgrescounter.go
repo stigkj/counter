@@ -16,27 +16,36 @@ func NewPostgresCounter(url string) (*PostgresCounter, error) {
 	url = url + "?sslmode=disable"
 	log.Printf("Connecting to Postgres %s\n", url)
 	db, err := sql.Open("postgres", url)
+
 	if err != nil {
 		log.Printf("%#v", err)
 		return nil, err
 	}
-	_, err = db.Exec("create table Counter(n integer default 0)")
-	if err == nil {
-		_, err := db.Exec("insert into Counter(n) values (0)")
-		if err != nil {
-			log.Printf("%#v", err)
-			return nil, err
-		}
-	} else {
-		log.Printf("%#v", err)
-		if pgErr, ok := err.(*pq.Error); ok {
-			if pgErr.Code != "42P07" {
+
+	_, err = db.Exec("select n from Counter")
+
+	if err != nil {
+		_, err = db.Exec("create table Counter(n integer default 0)")
+
+		if err == nil {
+			_, err := db.Exec("insert into Counter(n) values (0)")
+
+			if err != nil {
 				log.Printf("%#v", err)
 				return nil, err
 			}
 		} else {
 			log.Printf("%#v", err)
-			return nil, err
+
+			if pgErr, ok := err.(*pq.Error); ok {
+				if pgErr.Code != "42P07" {
+					log.Printf("%#v", err)
+					return nil, err
+				}
+			} else {
+				log.Printf("%#v", err)
+				return nil, err
+			}
 		}
 	}
 
